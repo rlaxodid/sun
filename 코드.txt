@@ -1,0 +1,78 @@
+- 사진 섞기  	
+
+void pieceShuffle() {
+		Random r = new Random();
+		int blank_x=mPuzzle.mPiece-1;
+		int blank_y=mPuzzle.mPiece-1;
+		for(int i=0;i<mPuzzle.mPiece*100;i++) {
+			int mx = r.nextInt(3)-1;
+			int my = r.nextInt(3)-1;
+			if(!(mPuzzle.mPiece <= blank_x+mx || 0 > blank_x+mx)) {
+				int tmp = mPuzzle.PuzzleMap[blank_x][blank_y];
+				mPuzzle.PuzzleMap[blank_x][blank_y] = mPuzzle.PuzzleMap[blank_x+mx][blank_y];
+				mPuzzle.PuzzleMap[blank_x+mx][blank_y] = tmp;
+				blank_x+=mx;
+			}
+			if(!(mPuzzle.mPiece <= blank_y+my || 0 > blank_y+my)) {
+				int tmp = mPuzzle.PuzzleMap[blank_x][blank_y];
+				mPuzzle.PuzzleMap[blank_x][blank_y] = mPuzzle.PuzzleMap[blank_x][blank_y+my];
+				mPuzzle.PuzzleMap[blank_x][blank_y+my] = tmp;
+				blank_y+=my;
+			}
+		}		
+	}
+	
+	@Override
+	
+	public myPuzzleView(Context context, int cropCount) {
+		super(context);
+		mPuzzle = (MyPuzzle) context;
+		mPuzzle.mPiece = cropCount;
+		init();
+	}
+
+
+
+- 이미지 분할하기
+onItem Selectetd를 상속받는 View함수를 생성한다. switch 함수를 이용하여 선택 된 조각들을 piece 변수에 대입시킨 뒤 potion함수로 이동 후 분할하게 된다.  
+
+public void onItemSelected(AdapterView<?> parent,
+
+View view, int positon, long id) {
+				etPiece = (EditText)findViewById(R.id.etPiece);
+				etPiece.setVisibility(View.INVISIBLE);
+				// TODO Auto-generated method stub
+				switch(positon) {
+				case 0:
+					piece=3;
+					break;
+				case 1:
+					piece=4;
+					break;
+				case 2:
+					piece=5;
+					break;
+				case 3:					
+					etPiece.setVisibility(View.VISIBLE);						
+					break;
+				}			
+			}
+	switch(positon) {
+				case 0:					
+					timelimit=90;
+					break;
+				case 1:
+					timelimit=150;
+					break;
+				case 2:
+					timelimit=300;
+					break;
+				case 3:
+					timelimit=0;
+					break;	
+
+}
+
+
+
+
