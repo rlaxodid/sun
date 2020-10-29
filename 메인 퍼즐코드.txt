@@ -1,0 +1,203 @@
+-main-
+package sus.puzzle;
+
+import sus.main.R;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.Display;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+public class Main extends Activity {
+	Uri returnImage;
+	LinearLayout main;
+	TextView tvTitle;
+	static int mWid, mHei, mLen;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) { 
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+		main = (LinearLayout)findViewById(R.id.mainLinear);
+		tvTitle = (TextView)findViewById(R.id.tvGameTitle);
+              Button btStart = (Button)findViewById(R.id.btStart);
+		//Button btOption = (Button)findViewById(R.id.btOption);
+		Button btExti = (Button)findViewById(R.id.btExit);
+		btStart.setOnClickListener(mClickListener);
+		//btOption.setOnClickListener(mClickListener);
+		btExti.setOnClickListener(mClickListener);
+		WindowManager wm = (WindowManager)getSystemService(Context.WINDOW_SERVICE);
+		Display d = wm.getDefaultDisplay();
+		mHei = d.getHeight();
+		mWid = d.getWidth();
+		mLen = mWid>mHei?mHei:mWid;
+	}
+	
+	Button.OnClickListener mClickListener = new Button.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			Intent intent;
+			switch(v.getId()) {
+			case R.id.btStart:
+				//Intent intent = new Intent(Main.this, SelectStage.class);
+				intent = new Intent(Main.this, SelectTab.class);
+				startActivity(intent);
+				break;
+			//case R.id.btOption:
+			
+			case R.id.btExit:
+				finish();
+				break;
+			}
+		}		
+	};	
+}
+
+-My Puzzle-
+package sus.puzzle;
+
+import java.util.Vector;
+
+import sus.main.R;
+import sus.puzzle.myPuzzleView.PuzzlePiece;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.view.Display;
+import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+public class MyPuzzle extends Activity {
+	LinearLayout puzzleLinear;
+	ProgressBar pgTime;
+	TextView tvMove;
+	int[][] PuzzleMap;
+	boolean initTag;
+	Vector<PuzzlePiece> vtPiece;
+	int mImageID;
+	int mPiece;		
+	int blockSize;
+	int mWid, mHei, mLen;
+	int mTime, mMove;
+	BackThread mThread;
+	int blank_x, blank_y;
+	Bitmap myImage = null;
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);				
+		
+		initVariable();
+		
+		setContentView(R.layout.puzzle);
+		myPuzzleView mPuzzle = new myPuzzleView(this, mHandler);
+		mPuzzle.setMinimumHeight(mLen);
+		mPuzzle.setMinimumWidth(mLen);				
+		
+		puzzleLinear =	(LinearLayout)findViewById(R.id.puzzleLinear);		
+		puzzleLinear.addView(mPuzzle,0);
+		
+		pgTime = (ProgressBar)findViewById(R.id.pgTimeView);
+		tvMove = (TextView)findViewById(R.id.tvMoveView);
+		pgTime.setMax(mTime);
+		pgTime.setProgress(mTime);
+//tvTime.setText(Integer.toString(mTime));
+		tvMove.setText(Integer.toString(mMove));
+		
+		mThread = new BackThread(mHandler);
+		mThread.setDaemon(true);
+		mThread.start();
+		
+		/*LinearLayout.LayoutParams params = 
+			new LinearLayout.LayoutParams(mLen, mLen, 1.0f);
+		puzzleLinear.addView(mPuzzle, 0, params);*/
+	}
+	void initVariable() {
+		Intent intent = getIntent();		
+		//mPiece = 5;
+		//mTime = 0;
+		myImage = (Bitmap)intent.getParcelableExtra("bitmapimage");		
+		mImageID = intent.getIntExtra("image", R.drawable.codegears001);
+		mPiece = intent.getIntExtra("piece", 3);
+		mTime= intent.getIntExtra("timelimit", 0);		
+		mHei = Main.mHei;
+		mWid = Main.mWid;
+		mLen = Main.mLen;
+		mMove=0;		
+		blockSize = mLen/mPiece;
+	}
+	
+	Handler mHandler = new Handler() {
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case 0:
+				pgTime.incrementProgressBy(-1);
+				//tvTime.setText(Integer.toString(msg.arg1));				
+				break;
+			case 1:
+				tvMove.setText(Integer.toString(mMove));
+				break;			
+			}
+		}
+};
+
+	public boolean canMove(int x, int y, int sx, int sy) {		
+		if( x<0 || sx<0 || y<0 || sy<0 ) return false;		
+		if(mPiece <= x || mPiece <= sx || mPiece <= y || mPiece <= sy) return false;		
+		int blank = mPiece * mPiece-1;
+		int a = PuzzleMap[sx][sy];
+		if(blank == a) {
+			PuzzleMap[sx][sy] = PuzzleMap[x][y];
+			PuzzleMap[x][y] = blank;			
+			return true;
+		}						
+		return false;
+		
+	}
+	
+	public boolean moveNext(int x, int y) {
+		if(true == canMove(x, y, x-1, y)) return true;
+		if(true == canMove(x, y, x+1, y)) return true;
+		if(true == canMove(x, y, x, y-1)) return true;
+		if(true == canMove(x, y, x, y+1)) return true;
+		return false;
+	}
+	
+	public boolean checkGameOver() {
+		int cnt = 0;
+		for (int i = 0 ; i<mPiece; i++) {
+			for (int j = 0 ; j<mPiece; j++) {				
+				if(cnt++ != PuzzleMap[i][j]) return false;				
+			}
+		}				
+		return true;		
+	}
+	
+	class BackThread extends Thread {
+		Handler mHandler;
+		public BackThread(Handler handler) {
+			mHandler = handler;
+		}
+
+		public void run() {
+			while(true) {				
+				Message msg = Message.obtain();
+				msg.what = 0;				
+				mHandler.sendMessage(msg);
+				try{Thread.sleep(1000);}catch(Exception e){;};			}
+		}
+	}
+	
+}
+
+
